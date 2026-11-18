@@ -1,0 +1,22 @@
+.git
+.gitignore
+.idea
+.vscode
+.venv
+venv
+__pycache__
+*.py[cod]
+*.log
+.pytest_cache
+.ruff_cache
+.mypy_cache
+
+# 本地配置与运行期产物不打进镜像
+.env
+chat_logs
+app/static/audio
+output
+logs
+
+# 图谱索引体积大，运行时由 compose 挂载（见 docker-compose.yml）
+dickens

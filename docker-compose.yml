@@ -1,0 +1,63 @@
+# P0：先起基础设施 + 现有 Flask 应用。
+# P1 会把 api 服务换成 uvicorn 启动的 FastAPI，并新增 worker 服务；
+# P2 起 postgres/redis 会被真正使用（当前仅完成编排，尚无代码读写）。
+
+name: cmekg-agent
+
+services:
+  postgres:
+    # 用 pgvector/pgvector:pg16：与 postgres:16 同源，且本机已有镜像，
+    # 在 registry 不可达的环境里也能起（postgres:16-alpine 需要联网拉取）。
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-cmekg}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cmekg_dev_local}
+      POSTGRES_DB: ${POSTGRES_DB:-cmekg}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cmekg} -d ${POSTGRES_DB:-cmekg}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: .
+    env_file:
+      - .env
+    environment:
+      PYTHONPATH: /app
+      # 提前注入，P2 接入 PostgreSQL/Redis 时无需再改 compose
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-cmekg}:${POSTGRES_PASSWORD:-cmekg_dev_local}@postgres:5432/${POSTGRES_DB:-cmekg}
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      # 图谱索引只读挂载；会话/日志目录可写
+      - ./dickens:/app/dickens:ro
+      - ./chat_logs:/app/chat_logs
+
+volumes:
+  pgdata:
+  redisdata:

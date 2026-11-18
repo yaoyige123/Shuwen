@@ -1,0 +1,129 @@
+from typing import Dict, Any
+
+from langchain_core.messages import AIMessage, ToolMessage
+
+from Chains.conclusion_chain import get_conclusion_chain
+
+def create_tool_call(name: str, args: Dict[str, Any]) -> Dict[str, Any]:
+    """创建工具调用对象"""
+    return {
+        "id": "call_" + name.lower(),
+        "name": name,
+        "type": "function",
+        "args": args
+    }
+
+def Sequence_Primary_Assistant(state: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    按顺序执行的Primary Assistant。
+    按固定顺序调用ToHistoryAgent，不使用LLM。
+    """
+    try:
+        user_information = state.get('user_information', '')
+        current_step = state.get('current_step') or 0  # 使用current_step跟踪进度
+        
+        # 定义固定的调用序列
+        steps = [
+            {
+                "name": "ToHistoryAgent",
+                "args": {
+                    "name": "患者",
+                    "information": user_information,
+                    "request": "请收集患者的基础病史信息。",
+                    "agent_id": 1
+                }
+            },
+            {
+                "name": "ToHistoryAgent",
+                "args": {
+                    "name": "患者",
+                    "information": user_information,
+                    "request": "请收集患者的手术经历。",
+                    "agent_id": 2
+                }
+            },
+            {
+                "name": "ToHistoryAgent",
+                "args": {
+                    "name": "患者",
+                    "information": user_information,
+                    "request": "请评估患者的当前状况。",
+                    "agent_id": 3
+                }
+            },
+            {
+                "name": "ToAnalgesiaAgent",
+                "args": {
+                    "name": "患者",
+                    "information": user_information,
+                }
+            },
+            {
+                "name": "ToRiskAgent",
+                "args": {
+                    "name": "患者",
+                    "information": user_information,
+                    "request": "请告知患者手术风险。",
+                }
+            },
+
+        ]
+        
+        # 如果已经完成所有步骤，返回空消息
+        if current_step == 100:
+            print("开始总结")
+            conclusion_chain = get_conclusion_chain()
+            graph_qa_result = state.get('graph_qa_result', '')
+            message = conclusion_chain.invoke({
+                "messages": state.get("messages", []),
+                "user_information": user_information,
+                "risk_analysis": graph_qa_result
+            })
+            return {
+                "messages": message,
+                "current_step": 100
+            }
+        if current_step >= len(steps):
+            print("对话结束")
+            message = AIMessage(
+                content="谢谢您的配合，术前谈话已完成。请你在麻醉知情同意书中签字确认。",
+            )
+            return {
+                "messages": message,
+                "current_step": 100
+            }
+        
+        
+        # 获取当前步骤
+        current_action = steps[current_step]
+        
+        # 创建工具调用
+        tool_call = create_tool_call(
+            current_action["name"],
+            current_action["args"]
+        )
+        
+        # 创建消息
+        # langchain-core 1.x：工具调用走正式字段 tool_calls。
+        # 旧的 additional_kwargs 兼容路径已废弃，且不会被 get_tool_calls 识别。
+        message = AIMessage(
+            content="",
+            tool_calls=[
+                {
+                    "name": tool_call["name"],
+                    "args": tool_call["args"],
+                    "id": tool_call["id"],
+                    "type": "tool_call",
+                }
+            ],
+        )
+        
+        # 返回结果，包括更新后的current_step
+        return {
+            "messages": message,
+            "current_step": current_step + 1
+        }
+        
+    except Exception as e:
+        print(f"序列执行助手处理时出错: {str(e)}")
+        raise

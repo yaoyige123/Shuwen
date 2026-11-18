@@ -1,0 +1,69 @@
+# 环境变量
+# 只忽略真实凭据文件；.env.example 是可公开的配置模板，必须提交
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 虚拟环境
+venv/
+ENV/
+env/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# 测试
+.coverage
+htmlcov/
+.pytest_cache/
+
+# 输出文件
+output/
+*.log 
+chat_logs/
+dickens/
+flask_session/
+*.wav
+
+# 工具链缓存（P0 新增）
+.ruff_cache/
+.mypy_cache/
+app/static/audio/
+
+# 运行期产物（P4）
+checkpoints.sqlite
+.coverage
+htmlcov/
+coverage.xml
+logs/
+
+# 注意：dickens/ 是 GraphRAG 的图谱索引，属于运行必需数据。
+# 当前被忽略以避免仓库膨胀；若要让他人开箱即用，请改为提交该目录，
+# 或补一个重建索引的脚本。

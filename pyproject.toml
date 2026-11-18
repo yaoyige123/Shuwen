@@ -1,0 +1,57 @@
+# 只放工具链配置，不放打包元数据（避免 pip install . 产生意外行为）
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+extend-exclude = [
+    "dickens",
+    ".venv",
+]
+
+[tool.ruff.lint]
+# E/F 基础错误，I 导入排序，UP 现代化语法，B bugbear
+select = ["E", "F", "I", "UP", "B"]
+# 提示词多为超长中文字符串字面量，行宽交给格式化处理
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# 入口文件需要先改 sys.path 再 import 项目内模块，E402 属预期
+"web/app.py" = ["E402"]
+"api_server.py" = ["E402"]
+"main.py" = ["E402"]
+"tests/conftest.py" = ["E402"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+warn_redundant_casts = true
+warn_unused_ignores = false
+check_untyped_defs = false
+# 项目目录名带连字符，且根目录有 __init__.py：mypy 会误判成"非法包名"。
+# 显式包基址 + 命名空间包让 mypy 只按 mypy_path 解析。
+namespace_packages = true
+explicit_package_bases = true
+mypy_path = "."
+exclude = [
+    "^Prompts/",
+    "^Indexes/",
+    "^Tools/",
+    "^tests/tts_ws_python3_demo\\.py$",
+]
+
+# 说明：Graph/ 与 Chains/ 是未类型化的既有 Agent 层（历史上没有注解，
+# 且大量依赖 LangChain 的复杂泛型）。CI 只对新增的平台层 app/ 做严格检查，
+# 这两块暂时跳过，避免把"没有注解"当成"类型错误"。
+[[tool.mypy.overrides]]
+module = ["Chains.*", "Graph.*", "Prompts.*", "Indexes.*", "Tools.*"]
+ignore_errors = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+# 后四个是历史遗留的脚本式测试，会真的调用 LLM / 讯飞，不适合放进离线 CI；
+# 需要时手动指定文件名运行。
+addopts = "-q"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]

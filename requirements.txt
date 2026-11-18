@@ -1,0 +1,61 @@
+# Web框架
+Flask==3.0.2
+Flask-Session==0.7.0
+Flask-Cors==4.0.0
+python-dotenv==1.0.1
+
+# async API（P1）
+fastapi>=0.110,<1
+uvicorn>=0.29,<1
+
+# 任务后端与 worker（P2）
+redis>=5.0,<6
+arq>=0.26,<1
+
+# LangChain 1.x（代码已迁移：pydantic v2 模型、tool_calls 正式字段、
+# AnyMessage 从 langchain_core.messages 导入）
+langchain-core>=1.6,<2
+langchain-openai>=1.6,<2
+langchain-community>=0.4,<0.5
+langgraph>=1.2,<2
+
+# 会话状态持久化（P2）
+langgraph-checkpoint-postgres>=3.2,<4
+langgraph-checkpoint-sqlite>=3.1,<4
+psycopg[binary]>=3.2,<4
+
+# OpenAI（langchain-openai 1.x 需要 openai>=2）
+openai>=2,<3
+
+# 知识图谱检索（Chains/graph_qa_chain.py 实际 import 的是 nano_graphrag）
+nano-graphrag
+
+# 语音：科大讯飞 WebSocket TTS/IAT + 音频处理
+websocket-client
+sounddevice
+soundfile
+numpy
+
+# 配置（langchain-core 1.x 要求 pydantic>=2.7）
+pydantic>=2.7,<3
+pydantic-settings>=2.2,<3
+typing-extensions>=4.10
+
+# 说明：0.1.x 时代 langchain-core 要求 packaging<24，与 pytest 9 冲突，
+# 升级到 1.x 后该约束已解除（见 requirements-dev.txt）。
+
+# 其他依赖
+python-dateutil==2.8.2
+requests>=2.31
+aiohttp>=3.9
+
+# 绘图与部署
+ipython
+graphviz>=0.20.1
+gunicorn>=20.1.0  # 生产环境WSGI服务器
+
+# 可观测性（P4）
+prometheus-client>=0.20,<1
+
+# 可选：Tools/lightrag_openai_demo.py 演示了另一个 RAG 实现，主流程不使用
+# lightrag
