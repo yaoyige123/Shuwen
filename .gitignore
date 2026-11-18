@@ -48,7 +48,6 @@ htmlcov/
 output/
 *.log 
 chat_logs/
-dickens/
 flask_session/
 *.wav
 
@@ -64,6 +63,9 @@ htmlcov/
 coverage.xml
 logs/
 
-# 注意：dickens/ 是 GraphRAG 的图谱索引，属于运行必需数据。
-# 当前被忽略以避免仓库膨胀；若要让他人开箱即用，请改为提交该目录，
-# 或补一个重建索引的脚本。
+# dickens/ 是 GraphRAG 的图谱索引（559 实体 / 371 关系 / 541 向量），
+# 属于运行必需数据 —— 缺失时风险告知只能降级为「无图谱依据」。
+# 因此这里**不再忽略**，随仓库一起提交，让他人开箱即用。
+# 仅排除其中可重建的 LLM 响应缓存（体积大且非必需）。
+dickens/kv_store_llm_response_cache.json
+
